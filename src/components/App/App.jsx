@@ -1,28 +1,39 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { nanoid } from 'nanoid';
 
-import { addContact, setFilter } from '../../redux/contactsSlice';
+import { setFilter } from '../../redux/contactsSlice';
 import ContactsForm from 'components/ContactsForm';
 import Filter from 'components/Filter';
 import ContactsList from 'components/ContactsList';
 
 import { Container, PhoneBook, Title } from './App.styled';
+import { selectContacts, selectError, selectIsLoading } from '../../redux/selectors';
+import { nanoid } from '@reduxjs/toolkit';
+import { useEffect } from 'react';
+import { addContact, fetchContacts } from '../../redux/operations';
 
 const App = () => {
-    const contacts = useSelector(state => state.contacts.contacts);
+    const contacts = useSelector(selectContacts);
+    const isLoading = useSelector(selectIsLoading);
+    const error = useSelector(selectError);
+
     const dispatch = useDispatch();
 
-    const handleSubmit = newContact => {
-        const { name, number } = newContact;
+    useEffect(() => {
+        dispatch(fetchContacts());
+    }, [dispatch]);
 
-        const inContacts = contacts.find(contact => contact.name.toLowerCase() === name.toLowerCase());
+    const handleSubmit = newContact => {
+        const { name, phone } = newContact;
+
+        const inContacts = contacts.find(
+            contact => contact.name.toLowerCase() === name.toLowerCase()
+        );
 
         if (inContacts) {
-            alert(`${inContacts.name} is already in contacts`);
-            return;
+            return alert(`${inContacts.name} is already in contacts`);
         }
         const id = nanoid();
-        dispatch(addContact({ id, name, number }));
+        dispatch(addContact({ id, name, phone }));
     };
 
     const handleFilterChange = event => {
@@ -39,7 +50,7 @@ const App = () => {
 
             <div className="contacts">
                 <Title>Contacts</Title>
-
+                {isLoading && !error && <b>Request in progress...</b>}
                 {contacts?.length > 0 ? (
                     <>
                         <Filter onChange={handleFilterChange} />
